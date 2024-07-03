@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        input[type="text"] {
+            width: calc(100% - 80px);
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        input[type="button"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            background-color: #4caf50;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        input[type="button"]:hover {
+            background-color: #45a049;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        button {
+            padding: 5px 10px;
+            font-size: 14px;
+            background-color: #f44336;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #e53935;
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="container">
+        <div id="logo">&nbsp;</div>
+        <h1>Attendance</h1>
+        <input type="text" id="name" placeholder="Enter your first name and last name">
+        <input type="button" value="Mark Attendance" onclick="saveAttendance()">
+        <ul id="attendanceList">
+            <!-- Attendance list will be populated dynamically -->
+        </ul>
+    </div>
+
+    <script>
+        // Function to add attendance to the server-side storage
+        function saveAttendance(name) {
+            if (!name.trim()) {
+                alert("Please enter a name");
+                return;
+            }
+
+            // Send a POST request to save the name on the server
+            fetch('save_attendance.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    renderAttendance(name); // Render the new name immediately
+                } else {
+                    alert("Failed to mark attendance. Please try again later.");
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Failed to mark attendance. Please try again later.");
+            });
+        }
+
+        // Function to remove attendance from the server-side storage
+        function removeAttendance(name, index) {
+            // Send a POST request to remove the name on the server
+            fetch('remove_attendance.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ index }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    renderAttendanceList(); // Re-render the attendance list
+                } else {
+                    alert("Failed to remove attendance. Please try again later.");
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Failed to remove attendance. Please try again later.");
+            });
+        }
+
+        // Function to render attendance list
+        function renderAttendance(name) {
+            const attendanceList = document.getElementById('attendanceList');
+            const listItem = document.createElement('li');
+            listItem.textContent = name;
+
+            const removeButton = document.createElement('button');
+            removeButton.textContent = 'Remove';
+            removeButton.onclick = function() {
+                removeAttendance(name, attendanceList.children.length); // Pass name and index
+            };
+
+            listItem.appendChild(removeButton);
+            attendanceList.appendChild(listItem);
+        }
+
+        // Load and render attendance list on page load
+        window.onload = function() {
+            fetch('load_attendance.php')
+            .then(response => response.json())
+            .then(data => {
+                data.attendance.forEach(name => {
+                    renderAttendance(name);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Failed to load attendance list. Please refresh the page.");
+            });
+        }
+    </script>
+</body>
+</html>

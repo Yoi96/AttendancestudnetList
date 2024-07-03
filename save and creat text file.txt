@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+
+</head>
+<body>
+    
+    <div class="container">
+        <div id="logo">&nbsp;</div>
+        <h1>Attendance</h1>
+        <input type="text" id="name" placeholder="Enter your first name and last name">
+        <input type="button" value="Mark Attendance" onclick="saveAttendance()">
+        <ul id="attendanceList"></ul>
+    </div>
+
+    <script>
+        // Function to save the attendance list to local storage
+        function saveAttendanceList(attendanceArray) {
+            localStorage.setItem('attendanceList', JSON.stringify(attendanceArray));
+        }
+
+        // Function to load the attendance list from local storage
+        function loadAttendanceList() {
+            const storedList = localStorage.getItem('attendanceList');
+            if (storedList) {
+                return JSON.parse(storedList);
+            }
+            return [];
+        }
+
+        // Function to render the attendance list in the UI
+        function renderAttendanceList() {
+            const attendanceList = document.getElementById('attendanceList');
+            attendanceList.innerHTML = '';
+            const attendanceArray = loadAttendanceList();
+            attendanceArray.forEach((name, index) => {
+                const listItem = document.createElement('li');
+                listItem.textContent = name;
+
+                const removeButton = document.createElement('button');
+                removeButton.textContent = 'Remove';
+                removeButton.onclick = function() {
+                    removeName(index);
+                };
+
+                listItem.appendChild(removeButton);
+                attendanceList.appendChild(listItem);
+            });
+        }
+
+        // Function to handle the saving of attendance
+        function saveAttendance() {
+            const nameInput = document.getElementById('name');
+            const name = nameInput.value.trim();
+            if (name === "") {
+                alert("Please enter a name");
+                return;
+            }
+
+            const attendanceArray = loadAttendanceList();
+            attendanceArray.push(name);
+            saveAttendanceList(attendanceArray);
+            renderAttendanceList();
+            nameInput.value = ""; // Clear the input field
+
+            // Save attendance names to a text file
+            saveToFile(attendanceArray);
+        }
+
+        // Function to remove a name from the attendance list
+        function removeName(index) {
+            const attendanceArray = loadAttendanceList();
+            attendanceArray.splice(index, 1); // Remove the name at the specified index
+            saveAttendanceList(attendanceArray);
+            renderAttendanceList();
+
+            // Update the text file after removing
+            saveToFile(attendanceArray);
+        }
+
+        // Function to save attendance names to a text file
+        function saveToFile(attendanceArray) {
+            const blob = new Blob([attendanceArray.join('\n')], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'attendance.txt';
+            document.body.appendChild(a);
+            a.click();
+
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 0);
+        }
+
+        // Load and render the attendance list on page load
+        window.onload = function() {
+            renderAttendanceList();
+        }
+    </script>
+</body>
+</html>
